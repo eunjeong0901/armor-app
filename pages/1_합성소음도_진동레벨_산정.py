@@ -575,13 +575,13 @@ else:
         if calculation_target == "🔊 합성소음도 산정":
             formula_title = "합성소음도 산출공식"
             formula_desc = "L₀ = 10 · log ( A · 10<sup>X₁/10</sup> + B · 10<sup>X₂/10</sup> + …… + N · 10<sup>Xₙ/10</sup> )"
-            var_desc = "<b>L₀</b> : 합성 소음도 (dB(A))"
+            var_desc = "<b>L₀</b> : 합성소음도 [dB(A)]"
         else:
             formula_title = (
                 "합성진동레벨 산출공식"
             )
             formula_desc = "V₀ = 10 · log ( A · 10<sup>X₁/10</sup> + B · 10<sup>X₂/10</sup> + …… + N · 10<sup>Xₙ/10</sup> )"
-            var_desc = "<b>V₀</b> : 합성 진동레벨 (dB(V))"
+            var_desc = "<b>V₀</b> : 합성진동레벨 [dB(V)]"
 
         st.markdown(
             f"""
@@ -590,8 +590,8 @@ else:
                 &nbsp;&nbsp;&nbsp;&nbsp;<b>{formula_desc}</b><br><br>
                 <b>여기서,</b> &nbsp; {var_desc}<br>
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>A, B, ……, N</b> : 각 장비의 투입대수<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>X₁,₂,……,ₙ</b> : 각 장비별 개별 소음도 또는 진동레벨
-            </div>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>X₁,₂,……,ₙ</b> : 각 장비별 개별 소음도
+            </div
             """,
             unsafe_allow_html=True,
         )
