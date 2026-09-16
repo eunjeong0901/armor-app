@@ -6,8 +6,8 @@ st.set_page_config(page_title="가설방음판넬 저감효과 자동산정 프�
 
 st.title("🛡️ 가설방음판넬 소음 저감효과 상세 산정 프로그램")
 
-# --- Streamlit Cloud(Linux) 환경 나눔고딕 폰트 적용 ---
-plt.rcParams['font.family'] = 'NanumGothic'
+# --- 폰트 깨짐 원인 차단 (기본 폰트 사용) ---
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial']
 plt.rcParams['axes.unicode_minus'] = False
 
 # --- 사이드바 입력부 ---
@@ -117,7 +117,7 @@ if final_noise <= env_target:
 else:
     st.error(f"⚠️ 저감 후 소음도[{final_noise:.1f} dB(A)]가 소음목표기준[{env_target:.0f} dB(A)]을 초과합니다.")
 
-# --- 4. 횡단면 배치도 시각화 ---
+# --- 4. 횡단면 배치도 시각화 (그래프 내부 텍스트 영문화로 깨짐 원천 차단) ---
 st.markdown("### 📐 소음원-가설방음판넬-수음점 횡단면도")
 
 fig, ax = plt.subplots(figsize=(10, 5.2))
@@ -128,25 +128,25 @@ x_rcv = dist_source_barrier + dist_receiver_barrier
 
 max_x = x_rcv * 1.05
 
-# 지형 시각화 (음원 지반고는 0.0 기준)
-ax.plot([x_src, x_bar, x_rcv], [g_source, g_barrier, g_receiver], color='saddlebrown', linewidth=3, label='지형 단면 (Ground Profile)')
+# 지형 시각화
+ax.plot([x_src, x_bar, x_rcv], [g_source, g_barrier, g_receiver], color='saddlebrown', linewidth=3, label='Ground Profile')
 
-# 음원, 가설방음판넬, 수음점 위치 표시
+# 음원, 가설방음판넬, 수음점 위치 표시 (영문 표기)
 ax.scatter([x_src], [y_src], color='red', s=120, zorder=5)
-ax.text(x_src, y_src + 0.4, f'음원 (Z={y_src:.1f}m)', fontsize=10, fontweight='bold', color='red', ha='center')
+ax.text(x_src, y_src + 0.4, f'Source (Z={y_src:.1f}m)', fontsize=10, fontweight='bold', color='red', ha='center')
 
 barrier_width = max_x * 0.015
 ax.bar(x_bar, y_barrier - g_barrier, width=barrier_width, bottom=g_barrier, color='gray', alpha=0.8, align='center')
-ax.text(x_bar, y_barrier + 0.4, f'가설방음판넬 (Z={y_barrier:.1f}m)', fontsize=10, fontweight='bold', color='darkslategray', ha='center')
+ax.text(x_bar, y_barrier + 0.4, f'Temporary Barrier (Z={y_barrier:.1f}m)', fontsize=10, fontweight='bold', color='darkslategray', ha='center')
 
 ax.scatter([x_rcv], [y_rcv], color='blue', s=120, zorder=5)
-ax.text(x_rcv, y_rcv + 0.4, f'수음점 (Z={y_rcv:.1f}m)', fontsize=10, fontweight='bold', color='blue', ha='center')
+ax.text(x_rcv, y_rcv + 0.4, f'Receiver (Z={y_rcv:.1f}m)', fontsize=10, fontweight='bold', color='blue', ha='center')
 
 # 회절 경로선 (A+B)
-ax.plot([x_src, x_bar, x_rcv], [y_src, y_barrier, y_rcv], color='orange', linestyle='--', linewidth=2.5, label='회절 경로 A+B')
+ax.plot([x_src, x_bar, x_rcv], [y_src, y_barrier, y_rcv], color='orange', linestyle='--', linewidth=2.5, label='Diffraction Path (A+B)')
 
 # 직선거리선 (D)
-ax.plot([x_src, x_rcv], [y_src, y_rcv], color='forestgreen', linestyle=':', linewidth=2.0, label='직선거리 D')
+ax.plot([x_src, x_rcv], [y_src, y_rcv], color='forestgreen', linestyle=':', linewidth=2.0, label='Direct Distance (D)')
 
 # 회절 경로 구간 A, B 표시
 mid_x_A = (x_src + x_bar) / 2
@@ -167,8 +167,8 @@ min_y = min(g_source, g_barrier, g_receiver) - 2
 max_y = max(y_barrier, y_src, y_rcv) * 1.4
 ax.set_ylim(min_y, max_y)
 
-ax.set_xlabel('수평 거리 (m)', fontsize=11)
-ax.set_ylabel('해발/기준 고도 (m)', fontsize=11)
+ax.set_xlabel('Horizontal Distance (m)', fontsize=11)
+ax.set_ylabel('Elevation / Altitude (m)', fontsize=11)
 ax.grid(True, linestyle=':', alpha=0.6)
 ax.legend(loc='upper right', framealpha=0.9)
 
