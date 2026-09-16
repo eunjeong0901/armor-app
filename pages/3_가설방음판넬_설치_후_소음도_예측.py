@@ -6,9 +6,8 @@ st.set_page_config(page_title="가설방음판넬 저감효과 자동산정 프�
 
 st.title("🛡️ 가설방음판넬 소음 저감효과 상세 산정 프로그램")
 
-# --- 한글 폰트 깨짐 방지 (시스템 기본 sans-serif 자동 매칭) ---
-plt.rcParams['font.family'] = 'sans-serif'
-plt.rcParams['font.sans-serif'] = ['Malgun Gothic', 'AppleGothic', 'NanumGothic', 'DejaVu Sans']
+# --- Streamlit Cloud(Linux) 환경 나눔고딕 폰트 적용 ---
+plt.rcParams['font.family'] = 'NanumGothic'
 plt.rcParams['axes.unicode_minus'] = False
 
 # --- 사이드바 입력부 ---
