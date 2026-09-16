@@ -1,4 +1,5 @@
 import math
+import platform
 import streamlit as st
 import matplotlib.pyplot as plt
 
@@ -6,8 +7,13 @@ st.set_page_config(page_title="가설방음판넬 저감효과 자동산정 프�
 
 st.title("🛡️ 가설방음판넬 소음 저감효과 상세 산정 프로그램")
 
-# --- 한글 폰트 깨짐 방지 설정 ---
-plt.rcParams['font.family'] = 'Malgun Gothic'
+# --- 운영체제별 한글 폰트 자동 설정 (리눅스 서버 및 윈도우 공통 대응) ---
+if platform.system() == 'Windows':
+    plt.rcParams['font.family'] = 'Malgun Gothic'
+else:
+    # Streamlit Cloud (Linux) 환경에서는 나눔고딕 사용
+    plt.rcParams['font.family'] = 'NanumGothic'
+
 plt.rcParams['axes.unicode_minus'] = False
 
 # --- 사이드바 입력부 ---
@@ -183,3 +189,10 @@ with st.expander("🔍 엑셀 세부 파라미터 및 지반고 상세 보기"):
     st.write(f"- **수음점 ~ 가설방음판넬 상단 거리 (B)**: {dist_B1:.2f} m")
     st.write(f"- **음원 ~ 수음점 직선거리 (D)**: {dist_D1:.2f} m")
     st.write(f"- **최종 경로차 ($\delta_1 = A + B - D$)**: {delta_1:.2f} m (회절감쇠치: {delta_ld1:.2f} dB)")
+    # 📌 푸터 추가
+st.markdown("---")
+st.markdown(
+    "<div style='text-align: center; color: #ffffff; font-size: 14px;"
+    " padding: 10px;'><b>제작자 :</b> (주)내경엔지니어링 박은정 과장</div>",
+    unsafe_allow_html=True,
+)
