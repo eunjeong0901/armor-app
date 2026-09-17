@@ -629,7 +629,7 @@ else:
 # 📌 푸터 추가
 st.markdown("---")
 st.markdown(
-    "<div style='text-align: center; color: #ffffff; font-size: 14px;"
+    "<div style='text-align: center; color: #BFBFBF; font-size: 14px;"
     " padding: 10px;'><b>제작자 :</b> (주)내경엔지니어링 박은정 과장</div>",
     unsafe_allow_html=True,
 )
