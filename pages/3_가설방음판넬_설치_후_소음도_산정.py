@@ -438,6 +438,6 @@ st.markdown(
     "<div style='text-align: center; color: #BFBFBF; font-size: 14px;"
     " padding: 5px;'><b>제작자 :</b> (주)내경엔지니어링 박은정 과장</div>"
     "<div style='text-align: center; color: #BFBFBF; font-size: 14px;"
-    " padding-bottom: 10px;'>문의사항은 <b>eunjeong0901@naver.com</b> 로 바랍니다.🦖</div>",
+    " padding-bottom: 10px;'>문의사항은 <b>eunjeong0901@naver.com</b> 으로 바랍니다.🦖</div>",
     unsafe_allow_html=True,
 )
