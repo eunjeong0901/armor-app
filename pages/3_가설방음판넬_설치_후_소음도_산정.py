@@ -12,7 +12,6 @@ st.set_page_config(page_title="가설방음판넬 저감효과 다중 산정 프
 st.markdown(
     """
     <style>
-    /* Streamlit 대형 데이터프레임(dataframe) 내부 텍스트, 인덱스 및 헤더 글씨 크기/정렬 통일 */
     [data-testid="stDataFrame"] div[data-testid="stTable"] td,
     .stDataFrame table tr td,
     div.stDataFrame td {
@@ -21,7 +20,6 @@ st.markdown(
         font-size: 14px !important;
     }
     
-    /* 데이터프레임 헤더(제목 행) 가운데 정렬 및 볼드체 */
     [data-testid="stDataFrame"] div[data-testid="stTable"] th,
     .stDataFrame table tr th,
     div.stDataFrame th, div.stDataFrame [data-testid="stTable"] th {
@@ -31,7 +29,6 @@ st.markdown(
         font-weight: bold !important;
     }
     
-    /* 입력 표 영역(커스텀 컬럼 타이틀) 가운데 정렬 및 볼드체 */
     .custom-table-header {
         text-align: center !important;
         font-size: 14px !important;
@@ -69,6 +66,13 @@ initial_data = [
 ]
 df_sample = pd.DataFrame(initial_data)
 
+# --- 세션 상태 초기화 ---
+if "df_facilities" not in st.session_state:
+    st.session_state["df_facilities"] = df_sample.copy()
+
+if "widget_version" not in st.session_state:
+    st.session_state["widget_version"] = 0
+
 # --- 사이드바 설정 ---
 with st.sidebar:
     st.header("🛠️ 1단계 : 입력 방식 선택")
@@ -89,19 +93,46 @@ with st.sidebar:
         
         uploaded_file = st.file_uploader("정온시설 데이터 CSV 파일", type=["csv"])
         if uploaded_file is not None:
-            try:
-                df_uploaded = pd.read_csv(uploaded_file, encoding='utf-8-sig')
-            except:
-                df_uploaded = pd.read_csv(uploaded_file, encoding='cp949')
-            st.session_state["df_facilities"] = df_uploaded
+            # 파일이 변경되었거나 처음 업로드된 경우
+            if "last_uploaded_file" not in st.session_state or st.session_state["last_uploaded_file"] != uploaded_file.name:
+                try:
+                    df_uploaded = pd.read_csv(uploaded_file, encoding='utf-8-sig')
+                except:
+                    try:
+                        df_uploaded = pd.read_csv(uploaded_file, encoding='cp949')
+                    except:
+                        df_uploaded = pd.read_csv(uploaded_file, encoding='euc-kr')
+                
+                # 필수 컬럼 검증 및 데이터 완벽 교체
+                required_cols = ["정온시설명", "이격거리(m)", "저감전 소음도[dB(A)]", "가설방음판넬 높이(m)", "소음환경기준[dB(A)]"]
+                if all(col in df_uploaded.columns for col in required_cols):
+                    st.session_state["df_facilities"] = df_uploaded[required_cols].copy()
+                else:
+                    st.session_state["df_facilities"] = df_uploaded.copy()
+                
+                st.session_state["last_uploaded_file"] = uploaded_file.name
+                st.session_state["widget_version"] += 1  # 위젯 키 갱신 버전 증가
+                st.rerun()
+            
             st.success("CSV 파일이 성공적으로 로드되었습니다!")
         else:
-            if "df_facilities" not in st.session_state:
+            if "last_uploaded_file" in st.session_state:
+                del st.session_state["last_uploaded_file"]
                 st.session_state["df_facilities"] = df_sample.copy()
+                st.session_state["widget_version"] += 1
+                st.rerun()
             st.info("위의 샘플 양식을 다운받거나, 필요한 컬럼이 포함된 CSV를 업로드해주세요.")
     else:
-        if "df_facilities" not in st.session_state or st.button("기본 데이터로 초기화"):
+        if "last_uploaded_file" in st.session_state:
+            del st.session_state["last_uploaded_file"]
             st.session_state["df_facilities"] = df_sample.copy()
+            st.session_state["widget_version"] += 1
+            st.rerun()
+            
+        if st.button("기본 데이터로 초기화"):
+            st.session_state["df_facilities"] = df_sample.copy()
+            st.session_state["widget_version"] += 1
+            st.rerun()
 
     st.markdown("---")
     st.header("💻 2단계 : 공통 설계 제원 설정")
@@ -110,7 +141,7 @@ with st.sidebar:
     h_source_rel = st.number_input("음원 높이 (Hs, m)", value=1.2, step=0.1, format="%.1f")
     h_rcv_common = st.number_input("수음점 높이 (Hr, m)", value=1.5, step=0.1, format="%.1f")
     dist_sb_fixed = st.number_input("음원~방음판넬 거리 (m)", value=10.0, step=0.5, format="%.1f")
-    g_source = 0.0  # 음원 지반고 기준점(0.0m)
+    g_source = 0.0
 
     st.markdown("---")
     st.header("⛰️ 3단계 : 지반고 입력 (선택사항)")
@@ -119,21 +150,21 @@ with st.sidebar:
 
 st.markdown("### 📋 정온시설별 조건 입력표")
 
-# --- 행 추가 및 초기화 버튼 영역 ---
 col_btn1, col_btn2, _ = st.columns([1.5, 1.5, 5])
 with col_btn1:
     if st.button("➕ 정온시설 추가"):
         new_row = {"정온시설명": f"새시설_{len(st.session_state['df_facilities'])+1}", "이격거리(m)": 100.0, "저감전 소음도[dB(A)]": 70.0, "가설방음판넬 높이(m)": 3.0, "소음환경기준[dB(A)]": 65.0}
         st.session_state["df_facilities"] = pd.concat([st.session_state["df_facilities"], pd.DataFrame([new_row])], ignore_index=True)
+        st.session_state["widget_version"] += 1
         st.rerun()
 with col_btn2:
     if st.button("🔄 전체 초기화"):
         st.session_state["df_facilities"] = df_sample.copy()
+        st.session_state["widget_version"] += 1
         st.rerun()
 
 st.info("💡 각 항목의 값을 직접 입력하여 수정할 수 있으며, 우측의 **[🗑️]** 버튼으로 행을 삭제할 수 있습니다.")
 
-# --- 표 형태의 커스텀 인터랙티브 조절 UI ---
 header_cols = st.columns([2.0, 1.5, 1.8, 2.0, 1.5, 0.8])
 header_cols[0].markdown("<div class='custom-table-header'>정온시설명</div>", unsafe_allow_html=True)
 header_cols[1].markdown("<div class='custom-table-header'>이격거리(m)</div>", unsafe_allow_html=True)
@@ -145,46 +176,48 @@ header_cols[5].markdown("<div class='custom-table-header'>삭제</div>", unsafe_
 st.markdown("---")
 
 indices_to_delete = []
+v_id = st.session_state["widget_version"]
 
 for idx, row in st.session_state["df_facilities"].iterrows():
     row_cols = st.columns([2.0, 1.5, 1.8, 2.0, 1.5, 0.8])
     
     with row_cols[0]:
         current_name = str(row["정온시설명"])
-        new_name = st.text_input("시설명", value=current_name, key=f"name_{idx}", label_visibility="collapsed")
+        new_name = st.text_input("시설명", value=current_name, key=f"name_{v_id}_{idx}", label_visibility="collapsed")
         if new_name != current_name:
             st.session_state["df_facilities"].at[idx, "정온시설명"] = new_name
 
     with row_cols[1]:
         current_dist = float(row["이격거리(m)"])
-        new_dist = st.number_input("이격거리", min_value=0.1, max_value=5000.0, value=current_dist, step=10.0, format="%.1f", key=f"dist_{idx}", label_visibility="collapsed")
+        new_dist = st.number_input("이격거리", min_value=0.1, max_value=5000.0, value=current_dist, step=10.0, format="%.1f", key=f"dist_{v_id}_{idx}", label_visibility="collapsed")
         if new_dist != current_dist:
             st.session_state["df_facilities"].at[idx, "이격거리(m)"] = new_dist
 
     with row_cols[2]:
         current_noise = float(row["저감전 소음도[dB(A)]"])
-        new_noise = st.number_input("저감전소음", min_value=0.0, max_value=150.0, value=current_noise, step=0.5, format="%.1f", key=f"noise_{idx}", label_visibility="collapsed")
+        new_noise = st.number_input("저감전소음", min_value=0.0, max_value=150.0, value=current_noise, step=0.5, format="%.1f", key=f"noise_{v_id}_{idx}", label_visibility="collapsed")
         if new_noise != current_noise:
             st.session_state["df_facilities"].at[idx, "저감전 소음도[dB(A)]"] = new_noise
 
     with row_cols[3]:
         current_h = float(row["가설방음판넬 높이(m)"])
-        new_h_input = st.number_input("높이", min_value=0.0, max_value=30.0, value=current_h, step=0.5, format="%.1f", key=f"input_h_{idx}", label_visibility="collapsed")
+        new_h_input = st.number_input("높이", min_value=0.0, max_value=30.0, value=current_h, step=0.5, format="%.1f", key=f"input_h_{v_id}_{idx}", label_visibility="collapsed")
         if new_h_input != current_h:
             st.session_state["df_facilities"].at[idx, "가설방음판넬 높이(m)"] = new_h_input
 
     with row_cols[4]:
         current_env = float(row["소음환경기준[dB(A)]"])
-        new_env = st.number_input("환경기준", min_value=0.0, max_value=120.0, value=current_env, step=1.0, format="%.1f", key=f"env_{idx}", label_visibility="collapsed")
+        new_env = st.number_input("환경기준", min_value=0.0, max_value=120.0, value=current_env, step=1.0, format="%.1f", key=f"env_{v_id}_{idx}", label_visibility="collapsed")
         if new_env != current_env:
             st.session_state["df_facilities"].at[idx, "소음환경기준[dB(A)]"] = new_env
 
     with row_cols[5]:
-        if st.button("🗑️", key=f"del_{idx}"):
+        if st.button("🗑️", key=f"del_{v_id}_{idx}"):
             indices_to_delete.append(idx)
 
 if indices_to_delete:
     st.session_state["df_facilities"] = st.session_state["df_facilities"].drop(indices_to_delete).reset_index(drop=True)
+    st.session_state["widget_version"] += 1
     st.rerun()
 
 # --- 회절감쇠 산정 함수 (Kurze & Anderson) ---
@@ -265,7 +298,7 @@ for idx, row in st.session_state["df_facilities"].iterrows():
         "이격거리(m)": round(dist_total, 1),
         "저감전 소음도[dB(A)]": round(noise_before, 1),
         "가설방음판넬 높이(m)": round(h_bar, 1),
-        "경로차 (δ, m)": round(delta_1, 3),  # 소수점 3자리까지 상세 표기
+        "경로차 (δ, m)": round(delta_1, 3),
         "회절감쇠 (ΔLd)": round(delta_ld_total, 1),
         "투과손실 (ΔLt)": round(tl_option, 1),
         "삽입손실(총 저감치)": round(delta_li, 1),
@@ -279,8 +312,6 @@ if results:
     result_df.index = range(1, len(result_df) + 1)
 
     st.markdown("---")
-    
-    # --- 결과 표 제목 왼쪽 정렬 ---
     st.markdown("### 📊 가설방음판넬 설치 후 소음 예측 결과표")
     
     numeric_cols = [
@@ -289,7 +320,6 @@ if results:
         "저감후 소음도[dB(A)]", "소음환경기준[dB(A)]"
     ]
     
-    # 경로차는 소수점 3자리, 나머지는 소수점 1자리로 맞춤 포맷 지정
     format_dict = {col: ("{:.3f}" if col == "경로차 (δ, m)" else "{:.1f}") for col in numeric_cols}
     styled_df = result_df.style.format(format_dict).set_properties(**{'text-align': 'center'})
     styled_df = styled_df.set_table_styles([{'selector': 'th', 'props': [('text-align', 'center'), ('font-weight', 'bold')]}])
@@ -304,7 +334,6 @@ if results:
         mime="text/csv",
     )
 
-    # --- 선택한 지점 상세 단면도 시각화 ---
     st.markdown("---")
     st.markdown("### 🔍 정온시설별 소음원-가설방음판넬-수음원 횡단면도")
 
@@ -333,12 +362,10 @@ if results:
         x_bar = dist_sb
         x_rcv = dist_total
         
-        # 기하학적 경로 A, B, D 길이 계산
         dist_A = math.sqrt(dist_sb**2 + (y_barrier - y_src)**2)
         dist_B = math.sqrt(dist_bo**2 + (y_barrier - y_rcv_abs)**2)
         dist_D = math.sqrt(dist_total**2 + (y_rcv_abs - y_src)**2)
         
-        # 지형 경사선 시각화 (음원 지반고 -> 방음판넬 지반고 -> 수음점 지반고 연결)
         ax.plot([x_src, x_bar, x_rcv], [g_source, g_barrier, g_rcv], color='saddlebrown', linewidth=3, label='지형 단면')
         
         ax.scatter([x_src], [y_src], color='red', s=100, zorder=5)
@@ -351,11 +378,9 @@ if results:
         ax.scatter([x_rcv], [y_rcv_abs], color='blue', s=100, zorder=5)
         ax.text(x_rcv, y_rcv_abs + 0.3, f'{selected_facility} O (Z={y_rcv_abs:.1f}m)', fontsize=10, fontweight='bold', color='blue', ha='center')
         
-        # 회절 경로 및 직선거리 플롯
         ax.plot([x_src, x_bar, x_rcv], [y_src, y_barrier, y_rcv_abs], color='orange', linestyle='--', linewidth=2.5, label='회절 경로 A+B')
         ax.plot([x_src, x_rcv], [y_src, y_rcv_abs], color='forestgreen', linestyle=':', linewidth=2.0, label='직선거리 D')
         
-        # --- 점선 근처에 실제 값 표기 (A+B 경로 및 직선거리 D) ---
         mid_A_x = (x_src + x_bar) / 2
         mid_A_y = (y_src + y_barrier) / 2
         ax.text(mid_A_x - dist_total * 0.02, mid_A_y + 0.35, f'A: {dist_A:.2f}m', fontsize=9, fontweight='bold', color='darkorange', bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.7, edgecolor='orange'))
